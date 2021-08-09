@@ -65,9 +65,6 @@
           <el-button v-if="row.status>0" type="warning" size="mini" @click="handleDraw(row)">
             去抽奖
           </el-button>
-
-          <a class="target" href="pick-card-draw" target="_blank">ssss</a>
-
         </template>
       </el-table-column>
     </el-table>
@@ -85,8 +82,29 @@
         <el-form-item label="牌子总数" prop="totalNum">
           <el-input v-model="temp.totalNum" type="number" placeholder="请输入。。" style="width:100%" />
         </el-form-item>
+        <el-form-item prop="coverUrl">
+          <el-input v-model="temp.coverUrl" type="hidden" clearable />
+        </el-form-item>
         <el-form-item label="封面" prop="coverUrl">
-          <el-input v-model="temp.coverUrl" placeholder="请输入。。" clearable />
+          <el-upload
+            class="upload"
+            :class="{ hide: hideUp }"
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            list-type="picture-card"
+            :limit="1"
+            accept="image/*"
+            :data="uploadData"
+            :before-upload="beforeUpload"
+            :handle-dialog="handleDialog"
+            :on-success="handleUpSuccess"
+            :on-error="handleUpError"
+            :on-change="handleUpUpload"
+            :on-preview="handleUpPreview"
+            :on-remove="handleUpRemove"
+          >
+            <i class="el-icon-plus" />
+          </el-upload>
         </el-form-item>
         <el-form-item label="未中奖提示语">
           <el-input v-model="temp.noPrizesMsg" clearable placeholder="请输入。。" style="width:100%" />
@@ -134,7 +152,7 @@
         </el-button>
       </div>
     </el-dialog>
-    <div id="con_lf_top_div" />
+
     <el-dialog title="明细" :visible.sync="dialogDetailVisible">
       <el-table :data="pvData" border fit highlight-current-row style="width: 100%" height="250">
         <el-table-column align="center" label="序号">
@@ -163,6 +181,8 @@
 <script>
 import { pageRaffleMain, insertRaffle, updateRaffle, getRaffleMainInfo, reStartRaffle, deleteRaffle, listRaffleDetail } from '@/api/rafflemanagement'
 
+import { getHeaders, getUploadUrl } from '@/api/upload'
+
 import Pagination from '@/components/Pagination' // secondary package based on el-pagination
 import waves from '@/directive/waves' // waves directive
 const statusEnum = [
@@ -185,9 +205,9 @@ export default {
       return title
     }
   },
-
   data() {
     return {
+
       list: null,
       listLoading: true,
       total: 0,
@@ -224,14 +244,65 @@ export default {
       textMap: {
         update: '编辑',
         create: '新增'
+      },
+      hideUp: true,
+      uploadUrl: '',
+      uploadHeaders: '',
+      uploadData: {
+        location: 'picture'
       }
-
     }
   },
+
   created() {
     this.getList()
+    this.uploadUrl = getUploadUrl()
+    this.uploadHeaders = getHeaders()
   },
   methods: {
+    beforeUpload(file) {
+      console.log('---beforeUpload')
+      const isJPG = file.type === 'image/jpeg'
+      const isLt2M = file.size / 1024 / 1024 < 2
+
+      if (!isJPG) {
+        this.$message.error('上传头像图片只能是 JPG 格式!')
+      }
+      if (!isLt2M) {
+        this.$message.error('上传头像图片大小不能超过 2MB!')
+      }
+      return isJPG && isLt2M
+    },
+    handleUpSuccess(response, file, fileList) {
+      this.temp.coverUrl = response.data
+      console.log('---handleUpSuccess')
+      console.log(this.temp.coverUrl)
+      console.log(response)
+      console.log(file)
+      console.log(fileList)
+    },
+    handleUpError(err, file, fileList) {
+      console.log('---handleUpError')
+      console.log(err)
+      console.log(file)
+      console.log(fileList)
+    },
+    handleUpUpload() {
+      console.log('---handleUpUpload')
+    },
+    handleUpPreview(file) {
+      console.log('---handleUpPreview')
+      console.log(file)
+      this.$refs.viewer.handleDialog(true)
+    },
+    handleUpRemove(file, fileList) {
+      console.log('---handleUpRemove')
+      console.log(file)
+      console.log(fileList)
+    },
+    handleDialog() {
+
+    },
     async getList() {
       this.listLoading = true
       const { data } = await pageRaffleMain(this.listQuery)
@@ -283,15 +354,20 @@ export default {
     },
     handleDraw(row) {
       this.$router.push({
-        path: 'pick-card-draw',
+        name: 'pickCardDraw',
         query: {
-          lotNo: row.lotNo
+          lotNo: row.lotNo,
+          status: 0
         }
       })
     },
     handleDetail(row) {
+      const data = {
+        lotNo: row.lotNo,
+        status: 1
+      }
       this.dialogDetailVisible = true
-      listRaffleDetail(row.lotNo).then((res) => {
+      listRaffleDetail(data).then((res) => {
         this.pvData = res.data
       })
     },
@@ -399,34 +475,8 @@ export default {
           prizesNum: ''
         }]
       }
-    },
-    screen() {
-      // let element = document.documentElement;//设置后就是我们平时的整个页面全屏效果
-      const element = document.getElementById('con_lf_top_div')// 设置后就是   id==con_lf_top_div 的容器全屏
-      if (this.fullscreen) {
-        if (document.exitFullscreen) {
-          document.exitFullscreen()
-        } else if (document.webkitCancelFullScreen) {
-          document.webkitCancelFullScreen()
-        } else if (document.mozCancelFullScreen) {
-          document.mozCancelFullScreen()
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen()
-        }
-      } else {
-        if (element.requestFullscreen) {
-          element.requestFullscreen()
-        } else if (element.webkitRequestFullScreen) {
-          element.webkitRequestFullScreen()
-        } else if (element.mozRequestFullScreen) {
-          element.mozRequestFullScreen()
-        } else if (element.msRequestFullscreen) {
-          // IE11
-          element.msRequestFullscreen()
-        }
-      }
-      this.fullscreen = !this.fullscreen
     }
+
   }
 }
 </script>

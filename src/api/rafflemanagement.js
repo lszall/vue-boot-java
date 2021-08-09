@@ -38,8 +38,9 @@ export function deleteRaffle(data) {
 }
 export function listRaffleDetail(data) {
   return request({
-    url: '/raffle/listRaffleDetail/' + data,
-    method: 'get'
+    url: '/raffle/listRaffleDetail',
+    method: 'post',
+    data
   })
 }
 export function reStartRaffle(data) {

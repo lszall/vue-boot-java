@@ -1,6 +1,9 @@
 <template>
   <div class="app-container">
-    <div id="app">
+    <div>
+      <svg-icon :icon-class="isFullscreen?'exit-fullscreen':'fullscreen'" class="screen-btn" @click="screen" />
+    </div>
+    <div id="con_lf_top_div">
       <div v-for="item in gifts" :key="item.id">
         <div class="box viewport-flip" title="点击翻面" @click="show(item)">
           <div :class="item.show?back:front">
@@ -16,12 +19,14 @@
 
 <script>
 import { listRaffleDetail } from '@/api/rafflemanagement'
-
+import screenfull from 'screenfull'
 export default {
   name: 'PickCardDraw',
   data() {
     return {
-      lotNo: '',
+      isFullscreen: false,
+      fullscreen: true,
+      data: '',
       front: 'list flip out',
       back: 'list flip',
       gifts: [],
@@ -33,15 +38,54 @@ export default {
   created() {
   },
   mounted() {
-    this.lotNo = this.$route.query.lotNo
+    this.data = this.$route.query
     this.init()
+    // this.screen()
   },
   methods: {
+    click() {
+      if (!screenfull.enabled) {
+        this.$message({
+          message: 'you browser can not work',
+          type: 'warning'
+        })
+        return false
+      }
+      screenfull.toggle()
+    },
     show(item) {
       item.show = !item.show
     },
+    screen() {
+      // let element = document.documentElement;//设置后就是我们平时的整个页面全屏效果
+      const element = document.getElementById('con_lf_top_div')// 设置后就是   id==con_lf_top_div 的容器全屏
+      if (this.fullscreen) {
+        if (document.exitFullscreen) {
+          document.exitFullscreen()
+        } else if (document.webkitCancelFullScreen) {
+          document.webkitCancelFullScreen()
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen()
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen()
+        }
+      } else {
+        if (element.requestFullscreen) {
+          element.requestFullscreen()
+        } else if (element.webkitRequestFullScreen) {
+          element.webkitRequestFullScreen()
+        } else if (element.mozRequestFullScreen) {
+          element.mozRequestFullScreen()
+        } else if (element.msRequestFullscreen) {
+          // IE11
+          element.msRequestFullscreen()
+        }
+      }
+      this.fullscreen = !this.fullscreen
+      this.isFullscreen = !this.isFullscreen
+    },
     async init() {
-      const { data } = await listRaffleDetail(this.lotNo)
+      const { data } = await listRaffleDetail(this.data)
       this.gifts = []
       this.pvData = data
       this.pvData.forEach(item => {
@@ -164,5 +208,9 @@ export default {
         line-height: 210px;
         border-radius: 5px;
         text-shadow: 1px 1px 1px #ccc;
+    }
+    .screen-btn{
+      margin-bottom: 10px;
+      padding: auto;
     }
 </style>

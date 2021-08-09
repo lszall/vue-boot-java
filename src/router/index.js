@@ -447,7 +447,7 @@ export const asyncRoutes = [
   {
     code: 'M002',
     path: '/rafflemanagement',
-    name: '抽奖管理',
+    name: 'rafflemanagement',
     order: '1',
     component: Layout,
     meta: {
